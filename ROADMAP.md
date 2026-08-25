@@ -28,6 +28,7 @@
 - [x] require exact orphan EC2 instance IDs
 - [x] require explicit state-bucket selection
 - [x] delete state buckets last
+- [x] block a Terraform-managed active S3 backend before plan or execute
 - [x] add post-operation verification
 
 ## Phase 3 – Isolated verification ✅
@@ -39,6 +40,7 @@
 - [x] prove a modified plan fails SHA-256 validation
 - [x] prove changed CLI targets fail reviewed-target validation
 - [x] prove an account mismatch blocks before Terraform planning
+- [x] prove a self-managed active S3 backend blocks before destroy planning
 - [x] simulate the reviewed Terraform and exact-target teardown sequence
 - [x] verify stale identities and addresses are absent
 
@@ -48,15 +50,20 @@
 - [x] create the Swedish operating handbook
 - [x] create the Iteration 5 roadmap
 - [x] create the work report
-- [x] record DMC-I5-001 through DMC-I5-004
+- [x] record DMC-I5-001 through DMC-I5-005
 
-## Phase 5 – Live preflight ⏳
+## Phase 5 – Live preflight 🔄
 
-- [ ] copy the project into its standalone Iteration 5 workspace
-- [ ] verify `pwd` and Git status
-- [ ] verify the intended AWS identity, account, and region
-- [ ] run `--check-only` against the real Terraform root
-- [ ] review every discovered Terraform and CLI target
+- [x] prepare the standalone Iteration 5 workspace
+- [x] verify `pwd` and Git status
+- [x] verify the intended AWS identity, account, and region
+- [x] run `--check-only` against the real Terraform root
+- [x] review every discovered Terraform and CLI target
+- [x] identify that the active S3 backend is managed by its own state
+- [x] add and simulate the automatic backend blocker
+- [ ] back up state outside the active backend bucket
+- [ ] migrate state to a separate protected backend or controlled local teardown copy
+- [ ] rerun live `--check-only` and confirm the blocker is cleared
 
 ## Phase 6 – Live destroy-plan review ⏳
 

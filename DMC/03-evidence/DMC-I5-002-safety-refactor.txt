@@ -1,6 +1,6 @@
 DMC-I5-002 – Säkerhetsrefaktorering
 Källfil: Level4 Iteration5.sh
-SHA-256: 943ed015780da929cb7d584faca0ab895ecebbc41400f8fcad673f7097793bd2
+SHA-256: bff79252183f23f11b39e4aa1f908d7c24eed6bf02cd5b7b56cabf9020ca8ab1
 Verifieringsdatum: 2026-08-25
 Verifieringstyp: statisk kontroll av reparerat kontrollflöde
 Riktiga AWS-, Terraform apply- eller delete-kommandon körda: nej
@@ -14,5 +14,6 @@ GODKÄND: exakt destruktiv bekräftelse krävs
 GODKÄND: gamla identiteter, IDs, buckets, adresser och CIDR är borttagna
 GODKÄND: orphan EC2 kräver explicit instans-ID
 GODKÄND: state-buckets kräver explicit val och raderas sist
+GODKÄND: Terraform-hanterad aktiv S3-backend stoppas före plan och execute
 
 SLUTRESULTAT: GODKÄND

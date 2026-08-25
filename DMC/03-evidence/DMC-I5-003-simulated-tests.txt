@@ -1,8 +1,8 @@
 DMC-I5-003 – Isolerad säkerhetssimulering
 Källfil: Level4 Iteration5.sh
-SHA-256: 943ed015780da929cb7d584faca0ab895ecebbc41400f8fcad673f7097793bd2
+SHA-256: bff79252183f23f11b39e4aa1f908d7c24eed6bf02cd5b7b56cabf9020ca8ab1
 Testfil: tests/test-iteration5.sh
-Testfil SHA-256: 23b9e9426e767e92c7d6ac596c77125c7455edb50dadac277589d99e9ea3b19e
+Testfil SHA-256: 9a3977f33867642dab0663a10e5d32a2d02264c81a125f11eb3f422e88c00e4e
 Verifieringsdatum: 2026-08-25
 Verifieringstyp: fake AWS, fake Terraform och fake Git
 Riktiga AWS-, Terraform apply- eller delete-kommandon körda: nej
@@ -13,6 +13,7 @@ GODKÄND: fel bekräftelse blockerade execution
 GODKÄND: manipulerad plan blockerades genom SHA-256
 GODKÄND: ändrade CLI-targets blockerades efter planfasen
 GODKÄND: fel AWS-konto blockerades före planering
+GODKÄND: aktiv Terraform-hanterad S3-backend blockerades före destroy-planering
 GODKÄND: granskad plan och exakta targets simulerades i rätt ordning
 GODKÄND: gamla användarspecifika värden saknas
 GODKÄND: Bash-syntaxen är giltig

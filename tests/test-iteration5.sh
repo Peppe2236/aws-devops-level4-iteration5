@@ -24,8 +24,10 @@ pass() {
   printf 'PASS: %s\n' "$*"
 }
 
-mkdir -p "$FAKE_BIN" "$PROJECT" "$FAKE_STATE_DIR"
+mkdir -p "$FAKE_BIN" "$PROJECT/.terraform" "$FAKE_STATE_DIR"
 printf '%s\n' 'terraform {}' >"$PROJECT/main.tf"
+printf '%s\n' '{"backend":{"type":"local","config":{}}}' \
+  >"$PROJECT/.terraform/terraform.tfstate"
 touch "$FAKE_LOG" "$FAKE_STATE_DIR/terraform-resource"
 
 cat >"$FAKE_BIN/aws" <<'AWS'
@@ -125,8 +127,21 @@ case "$command" in
     exit 0
     ;;
   state)
-    [[ ${1:-} == list ]] || exit 64
-    [[ -f "$FAKE_STATE_DIR/terraform-resource" ]] && printf 'aws_instance.demo\n'
+    case ${1:-} in
+      list)
+        [[ -f "$FAKE_STATE_DIR/terraform-resource" ]] && printf 'aws_instance.demo\n'
+        ;;
+      pull)
+        if [[ -n ${FAKE_BACKEND_BUCKET:-} ]]; then
+          printf '%s\n' "{\"resources\":[{\"mode\":\"managed\",\"type\":\"aws_s3_bucket\",\"name\":\"terraform_state\",\"instances\":[{\"attributes\":{\"bucket\":\"$FAKE_BACKEND_BUCKET\",\"id\":\"$FAKE_BACKEND_BUCKET\"}}]}]}"
+        else
+          printf '%s\n' '{"resources":[]}'
+        fi
+        ;;
+      *)
+        exit 64
+        ;;
+    esac
     ;;
   plan)
     out=''
@@ -247,6 +262,45 @@ if grep -En 'terraform .*plan|terraform .*apply|aws .*delete|aws .*terminate|aws
   fail 'account mismatch reached planning or destructive commands'
 fi
 pass 'wrong AWS account is blocked before planning'
+
+cat >"$PROJECT/.terraform/terraform.tfstate" <<'JSON'
+{
+  "backend": {
+    "type": "s3",
+    "config": {
+      "bucket": "self-managed-state-test"
+    }
+  }
+}
+JSON
+export FAKE_BACKEND_BUCKET='self-managed-state-test'
+plan_sha_before=$(sha256sum "$PROJECT/tfdestroyplan" | awk '{print $1}')
+: >"$FAKE_LOG"
+if bash "$SCRIPT" --plan "${common[@]}" --replace-plan >/dev/null 2>&1; then
+  fail 'self-managed active S3 backend was accepted for destroy planning'
+fi
+plan_sha_after=$(sha256sum "$PROJECT/tfdestroyplan" | awk '{print $1}')
+[[ "$plan_sha_before" == "$plan_sha_after" ]] \
+  || fail 'backend blocker replaced the previously reviewed plan'
+grep -Eq 'terraform .*state pull' "$FAKE_LOG" \
+  || fail 'active backend state was not inspected'
+if grep -En 'terraform .*plan -destroy|terraform .*apply|aws .*delete|aws .*terminate|aws .*revoke' "$FAKE_LOG"; then
+  fail 'self-managed backend blocker reached planning or destructive commands'
+fi
+
+: >"$FAKE_LOG"
+if bash "$SCRIPT" --execute "${common[@]}" --yes \
+  --confirmation 'DESTROY 123456789012 eu-north-1 Example.Owner' \
+  >/dev/null 2>&1; then
+  fail 'self-managed active S3 backend was accepted for execution'
+fi
+if grep -En 'terraform .*apply|aws .*delete|aws .*terminate|aws .*revoke' "$FAKE_LOG"; then
+  fail 'self-managed backend blocker reached destructive execution commands'
+fi
+unset FAKE_BACKEND_BUCKET
+printf '%s\n' '{"backend":{"type":"local","config":{}}}' \
+  >"$PROJECT/.terraform/terraform.tfstate"
+pass 'self-managed active S3 backend blocks plan and execute'
 
 : >"$FAKE_LOG"
 bash "$SCRIPT" --execute "${common[@]}" --yes \

@@ -1,4 +1,6 @@
 DMC-I5-001–DMC-I5-004 – SAMLAD ITERATION 5-VERIFIERING
+HISTORISK BASLINJE FÖRE LIVE PREFLIGHT
+ERSATT AV: DMC-I5-001-005-summary.txt
 Reparerad källfil: Level4 Iteration5.sh
 SHA-256: 943ed015780da929cb7d584faca0ab895ecebbc41400f8fcad673f7097793bd2
 Verifieringsdatum: 2026-08-25
@@ -14,3 +16,4 @@ Det är redo för live check-only och separat destroy-planering.
 Det är inte ett godkännande att köra --execute.
 
 SLUTRESULTAT: TEKNISKT GODKÄND FÖR LIVE PREFLIGHT, EJ EXECUTE
+Denna slutsats ersattes när live preflight upptäckte DMC-I5-005.

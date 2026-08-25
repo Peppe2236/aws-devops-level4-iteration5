@@ -32,6 +32,8 @@ OWNER_LOWER=''
 ENVIRONMENT_NAME=''
 PLAN_METADATA=''
 TEMP_DIR=''
+ACTIVE_S3_BACKEND_BUCKET=''
+SELF_MANAGED_BACKEND_BUCKET=''
 
 declare -a PIPELINES=()
 declare -a CODEBUILD_PROJECTS=()
@@ -118,6 +120,8 @@ Safety guarantees:
   * Plan SHA-256, account, region, owner, and project path are verified.
   * No account IDs, user names, buckets, security groups, CIDRs, or EC2 IDs
     are hard-coded.
+  * An active S3 backend bucket cannot be destroyed by the Terraform state
+    stored inside that same bucket. State must be migrated first.
   * Terraform-state buckets are explicit and deleted last.
   * The script never runs git commit/push and never rewrites Terraform files.
 USAGE
@@ -653,6 +657,79 @@ inspect_cli_targets() {
   done
 }
 
+inspect_active_s3_backend() {
+  local backend_metadata="$PROJECT_DIR/.terraform/terraform.tfstate"
+  local backend_type backend_bucket managed_count=0 explicit_target=0 value
+  local state_snapshot="$TEMP_DIR/active-backend-state.json"
+
+  ACTIVE_S3_BACKEND_BUCKET=''
+  SELF_MANAGED_BACKEND_BUCKET=''
+
+  if [[ ! -f "$backend_metadata" ]]; then
+    if [[ "$MODE" == 'execute' ]]; then
+      die "Cannot verify the active backend because initialized backend metadata is missing: $backend_metadata"
+    fi
+    warn "Active-backend safety could not be inspected before Terraform initialization."
+    return 0
+  fi
+
+  backend_type=$(jq -r '.backend.type // empty' "$backend_metadata") \
+    || die "Could not read initialized Terraform backend metadata."
+  if [[ "$backend_type" != 's3' ]]; then
+    log "Active backend safety: backend type '${backend_type:-local}' is not S3."
+    return 0
+  fi
+
+  backend_bucket=$(jq -r '.backend.config.bucket // empty' "$backend_metadata") \
+    || die "Could not read the active S3 backend bucket."
+  [[ -n "$backend_bucket" ]] \
+    || die "Initialized S3 backend metadata does not contain a bucket name."
+  ACTIVE_S3_BACKEND_BUCKET=$backend_bucket
+
+  : >"$state_snapshot"
+  chmod 600 "$state_snapshot"
+  if ! terraform -chdir="$PROJECT_DIR" state pull >"$state_snapshot"; then
+    if [[ "$MODE" == 'check' ]]; then
+      warn "Could not inspect whether the active S3 backend bucket is managed by this Terraform state."
+      return 0
+    fi
+    die "Could not inspect the active Terraform state before a destructive phase."
+  fi
+
+  managed_count=$(jq --arg bucket "$backend_bucket" '[
+    .resources[]?
+    | select(.mode == "managed" and .type == "aws_s3_bucket")
+    | .instances[]?.attributes
+    | select(.bucket == $bucket or .id == $bucket)
+  ] | length' "$state_snapshot")
+
+  for value in "${STATE_BUCKETS[@]}"; do
+    if [[ "$value" == "$backend_bucket" ]]; then
+      explicit_target=1
+      break
+    fi
+  done
+
+  log "Active S3 backend bucket: $backend_bucket"
+  if (( managed_count == 0 && explicit_target == 0 )); then
+    log "Active backend safety: bucket is not a destroy target."
+    return 0
+  fi
+
+  if (( managed_count > 0 )); then
+    SELF_MANAGED_BACKEND_BUCKET=$backend_bucket
+    warn "BLOCKER: Terraform manages its own active S3 backend bucket: $backend_bucket"
+  fi
+  if (( explicit_target == 1 )); then
+    warn "BLOCKER: The active S3 backend bucket is also an explicit state-bucket target: $backend_bucket"
+  fi
+
+  if [[ "$MODE" != 'check' ]]; then
+    die "Migrate and back up Terraform state to a different backend before planning or executing deletion of the active backend bucket."
+  fi
+  warn "Check-only found a backend blocker. No plan was created and nothing was deleted."
+}
+
 create_destroy_plan() {
   local plan_json="$TEMP_DIR/plan.json"
   local delete_count unexpected_count plan_sha target_sha
@@ -662,13 +739,15 @@ create_destroy_plan() {
     return 0
   fi
 
+  terraform -chdir="$PROJECT_DIR" init -input=false
+  inspect_active_s3_backend
+
   if [[ -e "$PLAN_FILE" || -e "$PLAN_METADATA" ]]; then
     (( REPLACE_PLAN == 1 )) \
       || die "Plan or metadata already exists. Review it or use --replace-plan for this exact path."
     rm -f -- "$PLAN_FILE" "$PLAN_METADATA"
   fi
 
-  terraform -chdir="$PROJECT_DIR" init -input=false
   terraform -chdir="$PROJECT_DIR" validate
   terraform -chdir="$PROJECT_DIR" plan -destroy -input=false -no-color \
     -lock-timeout=60s -out="$PLAN_FILE"
@@ -996,6 +1075,10 @@ run_cli_cleanup() {
     for value in "${STATE_BUCKETS[@]}"; do empty_and_delete_bucket "$value"; done
   fi
 }
+
+if [[ "$MODE" != 'plan' ]]; then
+  inspect_active_s3_backend
+fi
 
 print_inventory
 inspect_cli_targets

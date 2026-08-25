@@ -40,6 +40,7 @@ Följande säkerhetsfunktioner infördes:
 - inga hårdkodade användarnamn, konton, buckets, IDs, adresser eller CIDR;
 - versionerad S3-städning i batcher;
 - state-buckets alltid sist;
+- automatisk blockerare när aktiv S3-backend hanteras av det state som ligger i bucketen;
 - verifiering efter Terraform apply och efter CLI-radering.
 
 ## Testning
@@ -55,16 +56,25 @@ Testsviten ersatte `aws`, `terraform` och `git` med lokala fake-kommandon och ve
 5. ändrade CLI-targets stoppas efter planfasen;
 6. fel AWS-konto stoppas före planering;
 7. granskad plan och exakta projekttargets körs i avsedd ordning;
-8. gamla identiteter, IDs och CIDR är borttagna;
-9. Bash-syntaxen är giltig.
+8. aktiv Terraform-hanterad S3-backend blockerar före destroy-planering;
+9. gamla identiteter, IDs och CIDR är borttagna;
+10. Bash-syntaxen är giltig.
 
 Samtliga simulerade tester passerade.
+
+## Resultat från live preflight
+
+Den första riktiga `--check-only`-körningen verifierade rätt AWS-identitet, konto, region, Git-status och Terraform-root. De härledda CodePipeline-, CodeBuild- och source-bucket-målen saknades. Terraform-state innehöll endast en versionerad och krypterad S3-bucket för remote state samt dess versionerings- och krypteringsresurser.
+
+Preflighten visade att samma S3-bucket både var aktiv backend och Terraform-hanterad resurs. Ingen destroy-plan skapades. Detta registrerades som DMC-I5-005 och ledde till den automatiska backend-blockeraren ovan.
 
 ## Kvarstående livearbete
 
 Det verkliga Iteration 5-resultatet kan inte markeras som fullständigt förrän följande har utförts av operatören:
 
-- live `--check-only` i avsett konto och region;
+- säkerhetskopiera state utanför den aktiva backend-bucketen;
+- migrera state till en separat skyddad backend eller kontrollerad lokal teardown-kopia;
+- köra live `--check-only` igen och verifiera att blockeraren är borta;
 - manuell granskning av en riktig destroy-plan;
 - uttryckligt beslut om execute;
 - efterkontroll av Terraform-state och valda AWS-resurser.

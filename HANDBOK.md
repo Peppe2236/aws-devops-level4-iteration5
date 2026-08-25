@@ -10,14 +10,15 @@ Arbetskedjan är:
 
 1. verifiera katalog, Git-status, AWS-identitet, konto och region;
 2. inventera Terraform-state och exakt angivna AWS-mål;
-3. skapa en sparad Terraform destroy-plan;
-4. granska planen manuellt;
-5. verifiera planens SHA-256 och metadata;
-6. kräva en exakt destruktiv bekräftelse;
-7. applicera den granskade Terraform-planen;
-8. verifiera att Terraform-resurserna är borta;
-9. radera endast uttryckligen valda CLI-resurser;
-10. ta Terraform-state-buckets sist.
+3. kontrollera att en aktiv backend-bucket inte är sitt eget destroy-mål;
+4. skapa en sparad Terraform destroy-plan;
+5. granska planen manuellt;
+6. verifiera planens SHA-256 och metadata;
+7. kräva en exakt destruktiv bekräftelse;
+8. applicera den granskade Terraform-planen;
+9. verifiera att Terraform-resurserna är borta;
+10. radera endast uttryckligen valda CLI-resurser;
+11. ta Terraform-state-buckets sist.
 
 ## 2. Varför originalet inte fick köras
 
@@ -46,6 +47,7 @@ Detta är standardläget. Det:
 - kontrollerar Terraformkatalogen;
 - visar Git-status;
 - listar Terraform-state;
+- kontrollerar om en aktiv S3-backend hanteras av samma state;
 - inventerar angivna CLI-mål.
 
 Det skapar ingen plan och raderar ingenting.
@@ -56,6 +58,7 @@ Planläget:
 
 - kräver explicit owner, förväntat konto och förväntad region;
 - kör `terraform init` och `terraform validate`;
+- stoppar om den aktiva S3-backend-bucketen är ett Terraform- eller CLI-destroy-mål;
 - skapar en sparad `terraform plan -destroy`;
 - stoppar oväntade icke-destroy-åtgärder;
 - beräknar planens SHA-256;
@@ -128,7 +131,31 @@ Du kan även lägga till exakta mål för read-only inventering. Scriptet kan h�
 
 Inga state-buckets, IAM-resurser, security groups eller EC2-instanser härleds automatiskt.
 
-## 6. Skapa och granska destroy-planen
+### Backend-blockerare
+
+Om preflight visar att Terraform hanterar samma S3-bucket som används för aktiv remote state är planering blockerad. Statefilen ligger då inuti en resurs som destroy-planen skulle försöka ta bort.
+
+Fortsätt inte genom att lägga till bucketen med `--state-bucket`. Ta först en separat statebackup och migrera state till en annan skyddad backend eller till en kontrollerad lokal teardown-kopia. Terraform rekommenderar uttrycklig statebackup innan backend-migrering och använder `terraform init -migrate-state` när backendtypen ändras.
+
+Officiell dokumentation:
+
+- [Terraform backend configuration](https://developer.hashicorp.com/terraform/language/backend)
+- [Terraform init and state migration](https://developer.hashicorp.com/terraform/cli/commands/init)
+- [Terraform S3 backend](https://developer.hashicorp.com/terraform/language/backend/s3)
+
+## 6. Backend-säkerhet före plan
+
+Följande måste vara sant innan planfasen:
+
+- state har säkerhetskopierats utanför backend-bucketen;
+- den aktiva backend-bucketen är inte ett Terraform destroy-mål;
+- en uttrycklig `--state-bucket` är inte samtidigt aktiv backend;
+- den nya backendens state kan läsas med `terraform state list`;
+- originalets versionshistorik bevaras tills teardown är verifierad.
+
+Scriptet har ingen override för denna kontroll. Det är avsiktligt.
+
+## 7. Skapa och granska destroy-planen
 
 ```bash
 bash "/path/to/Level4 Iteration5.sh" \
@@ -152,7 +179,7 @@ terraform \
 
 Kontrollera varje resursadress. Kör inte vidare om planen innehåller något som ska bevaras.
 
-## 7. Exakta CLI-mål
+## 8. Exakta CLI-mål
 
 Följande flaggor är repeatable och lägger endast till det exakta angivna målet:
 
@@ -170,7 +197,7 @@ Följande flaggor är repeatable och lägger endast till det exakta angivna mål
 
 `--orphan-instance-id` accepterar inte taggnamn eller sökmönster. Det minskar risken att fel instans termineras.
 
-## 8. Execute
+## 9. Execute
 
 Använd samma identitets- och målflaggor som vid planeringen, men byt `--plan` mot `--execute`.
 
@@ -178,7 +205,7 @@ Scriptet visar den exakta bekräftelsefrasen. Läs målöversikten igen innan du
 
 För automatiserad körning krävs både `--yes` och `--confirmation`. Detta bör endast användas i en separat godkänd pipeline där planen redan har granskats.
 
-## 9. Raderingsordning
+## 10. Raderingsordning
 
 Efter en lyckad Terraform-apply används följande ordning:
 
@@ -193,7 +220,7 @@ Efter en lyckad Terraform-apply används följande ordning:
 
 S3-rutinen avbryter multipart uploads och tar bort både objektversioner och delete markers i batcher innan bucket-raderingen.
 
-## 10. Återställning och incidenthantering
+## 11. Återställning och incidenthantering
 
 Det finns ingen generell undo för en lyckad teardown.
 
@@ -204,7 +231,7 @@ Det finns ingen generell undo för en lyckad teardown.
 
 Innan execute bör du därför säkerställa att nödvändiga data, state och konfigurationer finns i en separat godkänd backup. Planfil och metadata är lokala kontrollartefakter, inte en återställningsbackup.
 
-## 11. Test och release
+## 12. Test och release
 
 ```bash
 bash -n "Level4 Iteration5.sh"

@@ -11,8 +11,8 @@ This repository replaces an unsafe terminal transcript with a tested Bash progra
 | Original script audit | Completed |
 | Bash repair and safety redesign | Completed |
 | Isolated simulation tests | Passed |
-| Live AWS preflight | Pending |
-| Live destroy-plan review | Pending |
+| Live AWS preflight | Completed; self-managed backend blocker found |
+| Live destroy-plan review | Blocked until state is backed up and migrated |
 | Destructive execution | Not authorized or performed |
 
 No real AWS resources were deleted while repairing or testing this script.
@@ -40,6 +40,7 @@ No real AWS resources were deleted while repairing or testing this script.
 - Non-interactive execution requires both `--yes` and the exact confirmation phrase.
 - State buckets, IAM roles, security groups, CIDRs, and orphan EC2 instances are never derived automatically.
 - Orphan EC2 termination accepts only explicit instance IDs; broad tag/name searches are forbidden.
+- Planning and execution stop when an active S3 backend bucket is managed by the Terraform state stored inside that same bucket.
 - Terraform-state buckets are explicit and always deleted last.
 - The script never commits, pushes, rewrites Terraform files, or runs `terraform destroy` automatically.
 
@@ -70,6 +71,8 @@ bash "Level4 Iteration5.sh" \
 ```
 
 This does not apply or delete anything.
+
+Planning is blocked when the active S3 backend bucket is also a Terraform destroy target. Back up the state and migrate it to a different protected backend before continuing. Never use `--state-bucket` to bypass this guard.
 
 ### 3. Review the exact saved plan
 
@@ -103,6 +106,7 @@ It uses standard `grep`; `ripgrep` (`rg`) is not required.
 - broad EC2 name-based termination;
 - unquoted variables and unsafe temporary files;
 - ignored AWS errors and missing post-delete verification;
-- no account, region, plan-integrity, or confirmation controls.
+- no account, region, plan-integrity, or confirmation controls;
+- no protection against Terraform destroying the S3 bucket containing its own active state.
 
-See [DMC/03-evidence/DMC-I5-001-004-summary.txt](DMC/03-evidence/DMC-I5-001-004-summary.txt) for the recorded verification result.
+See [DMC/03-evidence/DMC-I5-001-005-summary.txt](DMC/03-evidence/DMC-I5-001-005-summary.txt) for the recorded verification result.

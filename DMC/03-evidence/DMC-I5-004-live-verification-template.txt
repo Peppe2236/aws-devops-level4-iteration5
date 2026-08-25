@@ -1,11 +1,13 @@
 DMC-I5-004 – Live teardown-verifiering
 Källfil: Level4 Iteration5.sh
-SHA-256: 943ed015780da929cb7d584faca0ab895ecebbc41400f8fcad673f7097793bd2
-Verifieringsdatum: EJ UTFÖRD
+SHA-256: bff79252183f23f11b39e4aa1f908d7c24eed6bf02cd5b7b56cabf9020ca8ab1
+Verifieringsdatum: 2026-08-25 – PREFLIGHT UTFÖRD
 Verifieringstyp: riktig AWS preflight, destroy-plan, explicit execute och efterkontroll
 
-VÄNTAR: korrekt AWS-identitet, konto och region verifierade
-VÄNTAR: live check-only genomförd
+GODKÄND: korrekt AWS-identitet, konto och region verifierade
+GODKÄND: live check-only genomförd utan AWS-ändringar
+BLOCKERAD: aktiv S3-backend hanteras av samma Terraform-state
+VÄNTAR: separat statebackup och backend-migrering
 VÄNTAR: varje Terraform delete-adress manuellt granskad
 VÄNTAR: backups och retentionbeslut dokumenterade
 VÄNTAR: explicit execute godkänd och genomförd
@@ -13,4 +15,4 @@ VÄNTAR: Terraform-state verifierad efter apply
 VÄNTAR: varje explicit CLI-target verifierad som borttagen
 VÄNTAR: state-bucket antingen bevarad eller uttryckligen borttagen sist
 
-SLUTRESULTAT: VÄNTAR PÅ EXPLICIT LIVE-KÖRNING
+SLUTRESULTAT: PLAN OCH EXECUTE BLOCKERADE I VÄNTAN PÅ SÄKER STATE-MIGRERING
