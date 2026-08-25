@@ -242,3 +242,31 @@ git --no-pager status --short
 
 De automatiska testerna använder fake AWS och fake Terraform. De bevisar kontrollflödet men ersätter inte en live preflight eller manuell granskning av en riktig destroy-plan.
 Testsuiten använder vanlig `grep`; `ripgrep` (`rg`) behöver inte vara installerat.
+
+## 13. Verifierat referensresultat
+
+En fullständig livekörning genomfördes 2026-08-25 enligt denna handbok. Den
+första preflighten stoppade korrekt eftersom den aktiva S3-backend-bucketen
+hanterades av samma Terraform-state. State och hela versionshistoriken
+säkerhetskopierades därför utanför bucketen innan en kontrollerad lokal
+teardown-backend skapades.
+
+Den slutliga planen innehöll exakt tre Terraform delete-åtgärder och inga
+CLI-targets. Efter separat plangranskning och exakt destruktiv bekräftelse
+rapporterade Terraform:
+
+```text
+Apply complete! Resources: 0 added, 0 changed, 3 destroyed.
+```
+
+Den efterföljande read-only-kontrollen verifierade:
+
+- lokal backend med bevarad state-lineage;
+- state serial 7 och noll hanterade resurser;
+- oförändrad SHA-256 för den granskade planen;
+- att den godkända state-bucketen inte längre fanns i AWS-kontot;
+- att både originalbackup och post-preparation-backup fortfarande var giltiga.
+
+Identifierande AWS-värden och lokala sökvägar publiceras inte. Referensresultatet
+bevisar den aktuella körningen men ersätter inte en ny granskning inför framtida
+teardowns.

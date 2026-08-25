@@ -1,0 +1,31 @@
+DMC-I5-004 – Live teardown-verifiering
+Källfil: Level4 Iteration5.sh
+SHA-256: bff79252183f23f11b39e4aa1f908d7c24eed6bf02cd5b7b56cabf9020ca8ab1
+Verifieringsdatum: 2026-08-25
+Verifieringstyp: riktig AWS preflight, kontrollerad lokal statekopiering,
+sparad destroy-plan, explicit execute och read-only efterkontroll
+
+GODKÄND: korrekt AWS-identitet, konto och region verifierades
+GODKÄND: check-only ändrade ingenting och identifierade självhanterad backend
+GODKÄND: blockeraren stoppade plan och execute innan state migrerats
+GODKÄND: remote state, samtliga fem objektversioner och fyra delete markers
+          säkerhetskopierades utanför backend-bucketen
+GODKÄND: SHA-256-manifest verifierade originalbackupens samtliga filer
+GODKÄND: state kopierades till kontrollerad lokal backend med bevarad lineage
+GODKÄND: force_destroy förbereddes genom en separat icke-raderande update
+GODKÄND: destroy-planen innehöll exakt tre delete-åtgärder och inga andra
+GODKÄND: sparad plan verifierades med SHA-256
+          61ef3d1ecfc4c2b444dec1f08a671db07690b7ddf5fdb540d9478a78d8663048
+GODKÄND: CLI-targetfingeravtrycket motsvarade en tom targetlista
+GODKÄND: exakt destruktiv bekräftelse angavs före execute
+GODKÄND: apply rapporterade 0 added, 0 changed och 3 destroyed
+GODKÄND: lokal Terraform-state slutade på serial 7 med 0 managed resources
+GODKÄND: den godkända S3-bucketen saknades vid slutlig AWS-kontroll
+GODKÄND: originalbackup och post-preparation-backup verifierades efter teardown
+GODKÄND: slutverifieringen ändrade inga AWS- eller Terraform-resurser
+
+Kontonummer, bucketnamn, lokala sökvägar och state-lineage är avsiktligt
+utelämnade från den publika evidensen. De verifierades under körningen men ska
+inte publiceras i Git-repositoryt.
+
+SLUTRESULTAT: GODKÄND LIVE TEARDOWN OCH GODKÄND SLUTVERIFIERING

@@ -52,7 +52,7 @@
 - [x] create the work report
 - [x] record DMC-I5-001 through DMC-I5-005
 
-## Phase 5 – Live preflight 🔄
+## Phase 5 – Live preflight ✅
 
 - [x] prepare the standalone Iteration 5 workspace
 - [x] verify `pwd` and Git status
@@ -61,27 +61,33 @@
 - [x] review every discovered Terraform and CLI target
 - [x] identify that the active S3 backend is managed by its own state
 - [x] add and simulate the automatic backend blocker
-- [ ] back up state outside the active backend bucket
-- [ ] migrate state to a separate protected backend or controlled local teardown copy
-- [ ] rerun live `--check-only` and confirm the blocker is cleared
+- [x] back up state outside the active backend bucket
+- [x] preserve every state-object version and delete marker
+- [x] verify the external backup with SHA-256
+- [x] copy state to a controlled local teardown backend
+- [x] rerun live `--check-only` and confirm the blocker is cleared
 
-## Phase 6 – Live destroy-plan review ⏳
+## Phase 6 – Live destroy-plan review ✅
 
-- [ ] create a real saved destroy plan
-- [ ] review every Terraform delete address
-- [ ] confirm that the plan contains no unexpected action
-- [ ] preserve required backup/state evidence
-- [ ] record explicit approval or stop without applying
+- [x] prepare `force_destroy` through a reviewed non-delete update
+- [x] create a real saved destroy plan
+- [x] review every Terraform delete address
+- [x] confirm exactly three delete actions and no unexpected action
+- [x] bind the saved plan and empty CLI target list to SHA-256 metadata
+- [x] preserve required backup/state evidence
+- [x] record explicit approval before applying
 
-## Phase 7 – Controlled teardown ⏳
+## Phase 7 – Controlled teardown ✅
 
-- [ ] verify the saved plan and metadata immediately before execute
-- [ ] enter the exact destructive confirmation phrase
-- [ ] apply the reviewed Terraform plan
-- [ ] verify Terraform-managed resources are absent
-- [ ] remove only reviewed explicit CLI targets
-- [ ] delete an explicitly approved state bucket last
-- [ ] record final AWS absence checks
+- [x] verify the saved plan and metadata immediately before execute
+- [x] enter the exact destructive confirmation phrase
+- [x] apply only the reviewed Terraform plan
+- [x] destroy exactly three approved Terraform resources
+- [x] verify Terraform-managed resources are absent from local state
+- [x] confirm that no CLI targets were selected
+- [x] verify the approved state bucket is absent from the AWS account
+- [x] reverify both external state backups after teardown
+- [x] record final read-only AWS absence checks
 
 ## Phase 8 – Standalone GitHub release ✅
 

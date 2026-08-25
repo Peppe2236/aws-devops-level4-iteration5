@@ -68,15 +68,43 @@ Den första riktiga `--check-only`-körningen verifierade rätt AWS-identitet, k
 
 Preflighten visade att samma S3-bucket både var aktiv backend och Terraform-hanterad resurs. Ingen destroy-plan skapades. Detta registrerades som DMC-I5-005 och ledde till den automatiska backend-blockeraren ovan.
 
-## Kvarstående livearbete
+## Genomförd live teardown
 
-Det verkliga Iteration 5-resultatet kan inte markeras som fullständigt förrän följande har utförts av operatören:
+Efter den blockerade preflighten genomfördes följande kontrollerade arbetskedja:
 
-- säkerhetskopiera state utanför den aktiva backend-bucketen;
-- migrera state till en separat skyddad backend eller kontrollerad lokal teardown-kopia;
-- köra live `--check-only` igen och verifiera att blockeraren är borta;
-- manuell granskning av en riktig destroy-plan;
-- uttryckligt beslut om execute;
-- efterkontroll av Terraform-state och valda AWS-resurser.
+1. aktuell remote state hämtades till en skyddad katalog utanför projektet;
+2. samtliga fem S3-objektversioner och fyra delete markers inventerades;
+3. fem separata versionskopior laddades ned och verifierades med SHA-256;
+4. backendkonfigurationen kopierades till en isolerad teardown-katalog;
+5. state flyttades till en kontrollerad lokal backend med bevarad lineage;
+6. originalets remote state verifierades oförändrad före planering;
+7. `force_destroy` ändrades till `true` genom en separat plan med en update,
+   noll create och noll delete;
+8. en sparad destroy-plan skapades med exakt tre delete-åtgärder;
+9. varje delete-adress, planens SHA-256 och den tomma CLI-targetlistan granskades;
+10. execute verifierade samma plan och krävde den exakta destruktiva frasen;
+11. Terraform rapporterade `0 added, 0 changed, 3 destroyed`;
+12. read-only slutkontroll verifierade serial 7, noll managed resources,
+    borttagen bucket och båda externa statebackuperna.
 
-Detta är avsiktligt. Dokumentation eller automatiska tester får aldrig betraktas som tillstånd att radera en riktig AWS-miljö.
+Den granskade destroy-planens SHA-256 var:
+
+```text
+61ef3d1ecfc4c2b444dec1f08a671db07690b7ddf5fdb540d9478a78d8663048
+```
+
+Inga explicita CLI-targets valdes eller raderades. Kontonummer, bucketnamn,
+lokala sökvägar och state-lineage har avsiktligt utelämnats ur den publika
+rapporten. De privata backupfilerna ligger utanför Git-repositoryt.
+
+## Slutresultat
+
+Iteration 5 är fullständigt genomförd. Säkerhetsblockeraren fungerade, state
+säkerhetskopierades och isolerades före planering, endast den granskade planen
+applicerades och den efterföljande verifieringen visade att de tre godkända
+Terraform-resurserna och state-bucketen var borta. Återställningsunderlaget
+verifierades både före och efter teardown.
+
+Dokumentation och tester utgör fortfarande aldrig ett generellt tillstånd att
+radera en annan AWS-miljö. Varje framtida körning kräver ny preflight, ny plan,
+ny granskning och ny explicit bekräftelse.

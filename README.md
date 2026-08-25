@@ -11,11 +11,16 @@ This repository replaces an unsafe terminal transcript with a tested Bash progra
 | Original script audit | Completed |
 | Bash repair and safety redesign | Completed |
 | Isolated simulation tests | Passed |
-| Live AWS preflight | Completed; self-managed backend blocker found |
-| Live destroy-plan review | Blocked until state is backed up and migrated |
-| Destructive execution | Not authorized or performed |
+| Live AWS preflight | Passed; self-managed backend blocker worked |
+| State backup and controlled migration | Completed and verified |
+| Live destroy-plan review | Passed; exactly three delete actions |
+| Controlled execution | Completed with exact confirmation |
+| Final absence verification | Passed |
 
-No real AWS resources were deleted while repairing or testing this script.
+No AWS resources were deleted during repair or isolated testing. A later,
+explicitly approved live run removed exactly the three reviewed
+Terraform-managed resources after state backup, backend isolation and saved-plan
+verification. No CLI targets were selected.
 
 ## Repository contents
 
@@ -23,7 +28,7 @@ No real AWS resources were deleted while repairing or testing this script.
 | --- | --- |
 | `Level4 Iteration5.sh` | Repaired teardown program |
 | `HANDBOK.md` | Complete Swedish operating handbook |
-| `ROADMAP.md` | Completed and pending Iteration 5 phases |
+| `ROADMAP.md` | Completed Iteration 5 phases |
 | `ITERATION5-WORK-REPORT.md` | Audit, repair, and verification report |
 | `DMC/03-evidence/` | Defect-management evidence |
 | `tests/test-iteration5.sh` | Fake AWS/Terraform safety test suite |
@@ -86,6 +91,24 @@ terraform \
 ### 4. Execute only after review
 
 Re-run the script with `--execute` and the same identity and target options. The script verifies the saved plan and displays the exact confirmation phrase. Do not execute when any resource is unexpected.
+
+## Sanitized live result
+
+The completed reference run followed the documented stop-and-migrate path:
+
+- preflight detected and blocked a self-managed active S3 backend;
+- remote state and its complete version history were backed up externally;
+- state was copied to a controlled local backend without changing lineage;
+- the saved plan contained exactly three reviewed Terraform deletions;
+- the CLI target list was empty;
+- execution required the exact interactive confirmation phrase;
+- Terraform reported `0 added, 0 changed, 3 destroyed`;
+- final state contained zero managed resources;
+- the approved bucket was absent from the AWS account;
+- both external state backups passed SHA-256 verification.
+
+Account IDs, resource names, state lineage and local paths are intentionally
+excluded from this public repository.
 
 ## Tests
 
