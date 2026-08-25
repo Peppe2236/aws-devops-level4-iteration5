@@ -76,10 +76,10 @@
 - [ ] delete an explicitly approved state bucket last
 - [ ] record final AWS absence checks
 
-## Phase 8 – Standalone GitHub release 🔄
+## Phase 8 – Standalone GitHub release ✅
 
 - [x] prepare a standalone repository structure
 - [x] exclude original transcripts, state, plans, credentials, and local values
-- [ ] create `Peppe2236/aws-devops-level4-iteration5`
-- [ ] commit the repaired script, tests, documentation, and DMC evidence
-- [ ] push and verify the public repository
+- [x] create `Peppe2236/aws-devops-level4-iteration5`
+- [x] commit the repaired script, tests, documentation, and DMC evidence
+- [x] push and verify the public repository
