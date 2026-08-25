@@ -1,0 +1,16 @@
+DMC-I5-001 – Granskning av originalscript
+Källfil: Level4 iteration5.sh (uppladdat original)
+SHA-256: fd5883c2ab2712ca2f1e025c77fc6ab4983c2369cbdf90ab75b3a212baaf1d2f
+Verifieringsdatum: 2026-08-25
+Verifieringstyp: statisk analys och Bash-syntaxkontroll
+Riktiga AWS-, Terraform apply- eller delete-kommandon körda: nej
+
+FEL FUNNET: Bash-syntaxfel vid aktivt inklistrat JSON-innehåll
+FEL FUNNET: terraform apply kördes direkt efter terraform plan -destroy
+FEL FUNNET: annan användares konto, namn, resurser och adresser var hårdkodade
+FEL FUNNET: flera versions- och state-buckets kunde raderas utan tillräckligt skydd
+FEL FUNNET: IAM-fel doldes
+FEL FUNNET: EC2 kunde termineras genom en bred namnsökning
+FEL FUNNET: konto-, region-, planintegritets- och bekräftelsekontroller saknades
+
+SLUTRESULTAT: UNDERKÄNT ORIGINAL – OMBYGGNAD KRÄVD

@@ -1,0 +1,21 @@
+DMC-I5-003 – Isolerad säkerhetssimulering
+Källfil: Level4 Iteration5.sh
+SHA-256: 943ed015780da929cb7d584faca0ab895ecebbc41400f8fcad673f7097793bd2
+Testfil: tests/test-iteration5.sh
+Testfil SHA-256: 23b9e9426e767e92c7d6ac596c77125c7455edb50dadac277589d99e9ea3b19e
+Verifieringsdatum: 2026-08-25
+Verifieringstyp: fake AWS, fake Terraform och fake Git
+Riktiga AWS-, Terraform apply- eller delete-kommandon körda: nej
+
+GODKÄND: check-only anropade inga plan- eller delete-kommandon
+GODKÄND: plan skapades utan automatisk apply
+GODKÄND: fel bekräftelse blockerade execution
+GODKÄND: manipulerad plan blockerades genom SHA-256
+GODKÄND: ändrade CLI-targets blockerades efter planfasen
+GODKÄND: fel AWS-konto blockerades före planering
+GODKÄND: granskad plan och exakta targets simulerades i rätt ordning
+GODKÄND: gamla användarspecifika värden saknas
+GODKÄND: Bash-syntaxen är giltig
+GODKÄND: testsuiten fungerar utan det externa verktyget ripgrep (`rg`)
+
+SLUTRESULTAT: ALL ITERATION 5 TESTS PASSED

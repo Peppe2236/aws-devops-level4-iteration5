@@ -1,0 +1,29 @@
+# Terraform working data and state
+**/.terraform/*
+*.tfstate
+*.tfstate.*
+*.tfplan
+tfdestroyplan
+*.iteration5.json
+
+# Local variable and backend configuration
+*.tfvars
+*.tfvars.json
+backend.tf
+
+# Credentials, keys, and local environment
+.env
+.env.*
+*.pem
+*.key
+
+# Crash and debug output
+crash.log
+crash.*.log
+*.log
+
+# Local source preservation and temporary files
+*.original
+*.pre-clean
+*.before-*
+tmp/

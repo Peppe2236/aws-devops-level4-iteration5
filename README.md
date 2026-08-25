@@ -1,0 +1,108 @@
+# AWS DevOps Level 4 – Iteration 5
+
+Iteration 5 is a review-first teardown workflow for Terraform-managed infrastructure and a narrowly selected set of AWS resources.
+
+This repository replaces an unsafe terminal transcript with a tested Bash program. The default mode is read-only, Terraform planning is separated from execution, and every destructive run is bound to an exact AWS account, region, owner, project directory, saved-plan hash, and typed confirmation phrase.
+
+## Current status
+
+| Area | Status |
+| --- | --- |
+| Original script audit | Completed |
+| Bash repair and safety redesign | Completed |
+| Isolated simulation tests | Passed |
+| Live AWS preflight | Pending |
+| Live destroy-plan review | Pending |
+| Destructive execution | Not authorized or performed |
+
+No real AWS resources were deleted while repairing or testing this script.
+
+## Repository contents
+
+| Path | Purpose |
+| --- | --- |
+| `Level4 Iteration5.sh` | Repaired teardown program |
+| `HANDBOK.md` | Complete Swedish operating handbook |
+| `ROADMAP.md` | Completed and pending Iteration 5 phases |
+| `ITERATION5-WORK-REPORT.md` | Audit, repair, and verification report |
+| `DMC/03-evidence/` | Defect-management evidence |
+| `tests/test-iteration5.sh` | Fake AWS/Terraform safety test suite |
+
+## Key safeguards
+
+- `--check-only` is the default and never creates a plan or changes AWS.
+- `--plan` creates a saved destroy plan but never applies it.
+- `--execute` applies only an existing reviewed plan.
+- The plan is protected by SHA-256 metadata.
+- Account, region, owner, project path, plan path, and delete count must match.
+- CLI targets are fingerprinted and must match the reviewed plan phase.
+- Interactive execution requires typing `DESTROY ACCOUNT REGION OWNER` exactly.
+- Non-interactive execution requires both `--yes` and the exact confirmation phrase.
+- State buckets, IAM roles, security groups, CIDRs, and orphan EC2 instances are never derived automatically.
+- Orphan EC2 termination accepts only explicit instance IDs; broad tag/name searches are forbidden.
+- Terraform-state buckets are explicit and always deleted last.
+- The script never commits, pushes, rewrites Terraform files, or runs `terraform destroy` automatically.
+
+## Safe workflow
+
+Read the full [HANDBOK.md](HANDBOK.md) before using the script.
+
+### 1. Read-only preflight
+
+```bash
+bash "Level4 Iteration5.sh" \
+  --check-only \
+  --project-dir "/absolute/path/to/terraform/root" \
+  --region "eu-north-1"
+```
+
+### 2. Create a destroy plan
+
+```bash
+bash "Level4 Iteration5.sh" \
+  --plan \
+  --project-dir "/absolute/path/to/terraform/root" \
+  --region "eu-north-1" \
+  --owner "YOUR_OWNER" \
+  --expected-account "123456789012" \
+  --expected-region "eu-north-1" \
+  --include-derived-project-targets
+```
+
+This does not apply or delete anything.
+
+### 3. Review the exact saved plan
+
+```bash
+terraform \
+  -chdir="/absolute/path/to/terraform/root" \
+  show \
+  "/absolute/path/to/terraform/root/tfdestroyplan"
+```
+
+### 4. Execute only after review
+
+Re-run the script with `--execute` and the same identity and target options. The script verifies the saved plan and displays the exact confirmation phrase. Do not execute when any resource is unexpected.
+
+## Tests
+
+```bash
+bash -n "Level4 Iteration5.sh"
+bash "tests/test-iteration5.sh"
+```
+
+The test suite replaces AWS, Terraform, and Git with local fakes. It never contacts AWS and proves that the destructive commands remain behind the required safeguards.
+It uses standard `grep`; `ripgrep` (`rg`) is not required.
+
+## Original defects removed
+
+- invalid Bash caused by pasted JSON output;
+- automatic `terraform apply` immediately after planning;
+- hard-coded account IDs, user names, instance IDs, bucket names, VPC/subnet/security-group IDs, addresses, and CIDRs;
+- deletion of shared or unrelated buckets;
+- broad EC2 name-based termination;
+- unquoted variables and unsafe temporary files;
+- ignored AWS errors and missing post-delete verification;
+- no account, region, plan-integrity, or confirmation controls.
+
+See [DMC/03-evidence/DMC-I5-001-004-summary.txt](DMC/03-evidence/DMC-I5-001-004-summary.txt) for the recorded verification result.

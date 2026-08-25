@@ -1,0 +1,18 @@
+DMC-I5-002 – Säkerhetsrefaktorering
+Källfil: Level4 Iteration5.sh
+SHA-256: 943ed015780da929cb7d584faca0ab895ecebbc41400f8fcad673f7097793bd2
+Verifieringsdatum: 2026-08-25
+Verifieringstyp: statisk kontroll av reparerat kontrollflöde
+Riktiga AWS-, Terraform apply- eller delete-kommandon körda: nej
+
+GODKÄND: check-only är standardläge
+GODKÄND: plan och execute är separerade
+GODKÄND: execute skapar aldrig en ny plan
+GODKÄND: planens SHA-256 och metadata verifieras
+GODKÄND: konto, region, owner och projektkatalog måste matcha
+GODKÄND: exakt destruktiv bekräftelse krävs
+GODKÄND: gamla identiteter, IDs, buckets, adresser och CIDR är borttagna
+GODKÄND: orphan EC2 kräver explicit instans-ID
+GODKÄND: state-buckets kräver explicit val och raderas sist
+
+SLUTRESULTAT: GODKÄND
